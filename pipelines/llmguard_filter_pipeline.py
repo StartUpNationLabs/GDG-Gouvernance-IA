@@ -91,7 +91,7 @@ class Pipeline:
             raise Exception("Prompt injection detected")
 
         # Filter out confidential information
-        sanitized_prompt, is_valid, risk_score = self.bs_model.scan(body)
+        sanitized_prompt, is_valid, risk_score = self.bs_model.scan(user_message)
 
         if not is_valid:
             raise Exception("Prompt contains confidential information")
