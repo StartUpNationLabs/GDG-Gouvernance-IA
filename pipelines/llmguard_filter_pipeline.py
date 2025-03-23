@@ -1,7 +1,7 @@
 """
 title: LLM Guard Filter Pipeline
-author: jannikstdl
-date: 2024-05-30
+author: jannikstdl, ozeliurs
+date: 2024-05-30, 2025-03-23
 version: 1.0
 license: MIT
 description: A pipeline for filtering out potential prompt injections using the LLM Guard library.
