@@ -10,9 +10,9 @@ requirements: llm-guard
 
 from typing import List, Optional
 
-from llm_guard.input_scanners import BanSubstrings, PromptInjection
-from llm_guard.input_scanners.ban_substrings.MatchType import STR
-from llm_guard.input_scanners.prompt_injection.MatchType import FULL
+from llm_guard.input_scanners import BanSubstrings, PromptInjection  # ,Secrets
+from llm_guard.input_scanners.ban_substrings import MatchType as bs_match_type
+from llm_guard.input_scanners.prompt_injection import MatchType as pi_match_type
 from pydantic import BaseModel
 
 forbidden_strings = [
@@ -60,15 +60,14 @@ class Pipeline:
         # This function is called when the server is started.
         print(f"on_startup:{__name__}")
 
-        self.pi_model = PromptInjection(threshold=0.8, match_type=FULL)
+        self.pi_model = PromptInjection(threshold=0.8, match_type=pi_match_type.FULL)
         self.bs_model = BanSubstrings(
             substrings=forbidden_strings,
-            match_type=STR,
+            match_type=bs_match_type.STR,
             case_sensitive=False,
             redact=False,
             contains_all=False,
         )
-        pass
 
     async def on_shutdown(self):
         # This function is called when the server is stopped.
