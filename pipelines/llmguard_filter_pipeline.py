@@ -84,14 +84,38 @@ class Pipeline:
 
         user_message = body["messages"][-1]["content"]
 
+        if body["metadata"]["files"] is None:
+            body["metadata"]["files"] = []
+
+        files_contents = [
+            (
+                file["file"]["data"]["content"]
+                if (
+                    "file" in file
+                    and "data" in file["file"]
+                    and "content" in file["file"]["data"]
+                )
+                else ""
+            )
+            for file in body["metadata"]["files"]
+        ]
+
         # Filter out prompt injection messages
         sanitized_prompt, is_valid, risk_score = self.pi_model.scan(user_message)
 
         if risk_score > 0.8:
             raise Exception("Prompt injection detected")
 
+        # raise Exception(user_message)
+
         # Filter out confidential information
-        sanitized_prompt, is_valid, risk_score = self.bs_model.scan(user_message)
+        sanitized_prompt, is_valid, risk_score = self.bs_model.scan(
+            user_message + " " + " ".join(files_contents)
+        )
+
+        # raise Exception(
+        #    f"type(user_message): {type(user_message)}, user_message: {user_message}, sanitized_prompt: {sanitized_prompt}, is_valid: {is_valid}, risk_score: {risk_score}"
+        # )
 
         if not is_valid:
             raise Exception("Prompt contains confidential information")
