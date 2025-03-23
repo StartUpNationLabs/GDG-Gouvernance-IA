@@ -79,7 +79,6 @@ class Pipeline:
         pass
 
     async def inlet(self, body: dict, user: Optional[dict] = None) -> dict:
-        # This filter is applied to the form data before it is sent to the OpenAI API.
         print(f"inlet:{__name__}")
 
         user_message = body["messages"][-1]["content"]
@@ -104,20 +103,32 @@ class Pipeline:
         sanitized_prompt, is_valid, risk_score = self.pi_model.scan(user_message)
 
         if risk_score > 0.8:
-            raise Exception("Prompt injection detected")
-
-        # raise Exception(user_message)
+            raise Exception(
+                "Prompt injection detected with risk score: {:.2f}".format(risk_score)
+            )
 
         # Filter out confidential information
-        sanitized_prompt, is_valid, risk_score = self.bs_model.scan(
-            user_message + " " + " ".join(files_contents)
-        )
-
-        # raise Exception(
-        #    f"type(user_message): {type(user_message)}, user_message: {user_message}, sanitized_prompt: {sanitized_prompt}, is_valid: {is_valid}, risk_score: {risk_score}"
-        # )
+        full_content = user_message + " " + " ".join(files_contents)
+        sanitized_prompt, is_valid, risk_score = self.bs_model.scan(full_content)
 
         if not is_valid:
-            raise Exception("Prompt contains confidential information")
+            # Find which forbidden strings were matched
+            matched_strings = []
+            for forbidden in forbidden_strings:
+                if forbidden.lower() in full_content.lower():
+                    # Get some context around the match
+                    index = full_content.lower().find(forbidden.lower())
+                    start = max(0, index - 20)
+                    end = min(len(full_content), index + len(forbidden) + 20)
+                    context = full_content[start:end]
+                    matched_strings.append(
+                        {"forbidden_string": forbidden, "context": f"...{context}..."}
+                    )
+
+            error_message = "Confidential information detected:\n"
+            for match in matched_strings:
+                error_message += f"\n- Found '{match['forbidden_string']}' in context:\n  {match['context']}"
+
+            raise Exception(error_message)
 
         return body
